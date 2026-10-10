@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>Scp603.IconGen</RootNamespace>
+    <AssemblyName>SCP603.IconGen</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,24 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+.vs/
+
+# Runtime artefacts produced by the simulator (kept out of VCS)
+source/
+megaprime
+megaprime.manifest.txt
+runtime/
+out/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Editor
+*.swp
+.idea/

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Scp603.Gui</RootNamespace>
+    <AssemblyName>SCP603</AssemblyName>
+    <ApplicationIcon>..\..\assets\scp603.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SCP603.Core\SCP603.Core.csproj" />
+  </ItemGroup>
+
+</Project>
