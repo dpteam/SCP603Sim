@@ -63,7 +63,7 @@
 ## 6. Критерии готовности
 
 - [x] `dotnet build SCP603.sln` — 0 ошибок, 0 предупреждений.
-- [x] `dotnet run --project tests/SCP603.Tests` — все тесты зелёные (38/38).
+- [x] `dotnet run --project tests/SCP603.Tests` — все тесты зелёные (39/39).
 - [x] CLI: `run`, `versions`, `compile`, `scene`, `info`, `list-scenes`, `selftest`.
 - [x] GUI на WPF с двумя панелями и интерактивными сценами.
 - [x] Иконка сгенерирована и подключена к приложению.

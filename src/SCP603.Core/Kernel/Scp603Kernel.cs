@@ -230,9 +230,10 @@ public sealed class Scp603Kernel : IDisposable
         int index = profile.IndexOneBased ? 1 : 0;
         long seq = 0;
 
-        try
+        int consecutiveErrors = 0;
+        while (!token.IsCancellationRequested)
         {
-            while (!token.IsCancellationRequested)
+            try
             {
                 if (Primes.IsPrime(value))
                 {
@@ -251,30 +252,49 @@ public sealed class Scp603Kernel : IDisposable
                     index++;
                 }
 
+                consecutiveErrors = 0;
+
                 if (value >= long.MaxValue - 2)
                 {
                     break;
                 }
 
                 value++;
-
-                if (_options.PrimeDelayMs > 0 && token.WaitHandle.WaitOne(_options.PrimeDelayMs))
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                // A subscriber or a scene failed us: log it and keep the main thread alive,
+                // skipping the offending value so we never spin on the same failure.
+                consecutiveErrors++;
+                _journal.Write($"Основной поток: сбой шага ({ex.Message}), продолжаю.");
+                if (value < long.MaxValue - 2)
                 {
+                    value++;
+                }
+
+                if (consecutiveErrors > 1000)
+                {
+                    _journal.Write("Основной поток: слишком много подряд сбоев, поток остановлен.");
                     break;
                 }
             }
-        }
-        catch (OperationCanceledException)
-        {
-            // expected on shutdown
+
+            if (_options.PrimeDelayMs > 0 && token.WaitHandle.WaitOne(_options.PrimeDelayMs))
+            {
+                break;
+            }
         }
     }
 
     private void ForgeLoop(CancellationToken token)
     {
-        try
+        for (int i = 0; i < _options.ForgeTargetVersions && !token.IsCancellationRequested; i++)
         {
-            for (int i = 0; i < _options.ForgeTargetVersions && !token.IsCancellationRequested; i++)
+            try
             {
                 if (_options.ForgeStepDelayMs > 0 && token.WaitHandle.WaitOne(_options.ForgeStepDelayMs))
                 {
@@ -283,10 +303,16 @@ public sealed class Scp603Kernel : IDisposable
 
                 ProduceNextVersion();
             }
-        }
-        catch (OperationCanceledException)
-        {
-            // expected
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                // A failed generation step must never take down the whole object:
+                // log it and try the next step (the source file simply is not written).
+                _journal.Write($"Кузница: шаг генерации не удался ({ex.Message}), пробую снова.");
+            }
         }
     }
 

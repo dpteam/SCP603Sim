@@ -131,6 +131,36 @@ public static class KernelTests
             }
         });
 
+        Register("kernel: сбой подписчика не роняет основной поток", () =>
+        {
+            string dir = TestFs.NewTempDir();
+            try
+            {
+                using var kernel = new Scp603Kernel(Options(dir));
+                int calls = 0;
+                int failures = 0;
+                kernel.PrimeGenerated += e =>
+                {
+                    Interlocked.Increment(ref calls);
+                    if (e.Value == 7 && Interlocked.Increment(ref failures) == 1)
+                    {
+                        throw new InvalidOperationException("искусственный сбой подписчика");
+                    }
+                };
+
+                kernel.Start();
+                Thread.Sleep(300);
+                kernel.Stop();
+
+                True(failures >= 1, "подписчик не получил число 7 для проверки устойчивости");
+                True(calls > 50, $"поток простых чисел остановился преждевременно (вызовов {calls})");
+            }
+            finally
+            {
+                TestFs.Cleanup(dir);
+            }
+        });
+
         Register("kernel: запуск и остановка потоков не падает", () =>
         {
             string dir = TestFs.NewTempDir();

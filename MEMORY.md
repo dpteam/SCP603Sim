@@ -70,7 +70,7 @@
 
 ```powershell
 dotnet build SCP603.sln
-dotnet run --project tests/SCP603.Tests        # 38/38
+dotnet run --project tests/SCP603.Tests        # 39/39
 dotnet run --project src/SCP603.Cli -- info --version 7
 dotnet run --project src/SCP603.Cli -- run --count 30
 ```
