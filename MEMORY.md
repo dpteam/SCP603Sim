@@ -44,6 +44,11 @@
 - **GUI-данные** лежат в `%LOCALAPPDATA%\SCP603Sim`; CLI — в текущем каталоге (`--base` меняет).
 - **Иконка** требуется на этапе сборки (`ApplicationIcon`), поэтому `assets/scp603.ico` должен
   существовать в репозитории.
+- **Окна:** `MainWindow` — наблюдательная комната, `SceneWindow` — отдельное top-level окно
+  каждой сцены с собственным timer/input/title/icon. Несколько сцен могут жить одновременно.
+- **Самокопия:** `MorphikSourceForge` создаёт `vNNNN.SelfCopy.g.cs` и настоящий `vNNNN.ico`
+  средствами BCL. Companion — архивный исходник, его нельзя автоматически компилировать или
+  загружать.
 
 ## 4. Карта модулей (быстрый поиск)
 
@@ -58,6 +63,7 @@
 - Сцены — `Core/Scenes/*`, реестр `SceneCatalog`.
 - Рисование — `Core/Rendering/ICanvas.cs`, `TextCanvas.cs`.
 - Набор сцен версии — `Core/Versioning/SceneSet.cs`.
+- Архив мутаций и companion-исходников — `Core/Morphik/MorphikSourceForge.cs`.
 
 ## 5. Формула окон
 

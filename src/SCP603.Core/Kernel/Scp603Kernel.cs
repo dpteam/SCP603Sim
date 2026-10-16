@@ -327,6 +327,7 @@ public sealed class Scp603Kernel : IDisposable
         int nextVersion = current.Version + 1;
         var rng = new XorShift64(unchecked(0x5C603UL ^ ((ulong)nextVersion * 0x9E3779B97F4A7C15UL)));
         MorphikProfile next = MorphikProfileFactory.Mutate(current, rng);
+        next.MutationSummary = string.Join("; ", MorphikSourceForge.DescribeMutations(current, next));
 
         ProgramNode program = ProgramTemplate.Build(next);
         ProgramNode obfuscated = MorphikObfuscator.Obfuscate(program, new XorShift64(unchecked(next.Digest() ^ 0xA5A5A5A5UL)));
@@ -334,9 +335,18 @@ public sealed class Scp603Kernel : IDisposable
 
         string header =
             $"{next.CommentPrefix} SCP-603 — собственная копия исходного кода, версия {next.Version}\n" +
-            $"{next.CommentPrefix} язык: {next.LanguageName}, дайджест: {next.Digest():x16}\n";
+            $"{next.CommentPrefix} язык: {next.LanguageName}, дайджест: {next.Digest():x16}\n" +
+            $"{next.CommentPrefix} родитель: {next.ParentDigest:x16}\n" +
+            $"{next.CommentPrefix} мутация: {next.MutationSummary}\n";
         string path = Path.Combine(_options.SourceDirectory, $"v{next.Version:D4}.morphik");
         File.WriteAllText(path, header + source);
+        string rendererPath = MorphikSourceForge.WriteCompanion(
+            _options.SourceDirectory,
+            current,
+            next,
+            header + source,
+            out string mutationSummary,
+            out string iconPath);
 
         lock (_gate)
         {
@@ -345,8 +355,16 @@ public sealed class Scp603Kernel : IDisposable
             LatestVersion = next.Version;
         }
 
-        var evt = new VersionEvent(next.Version, path, next.Digest());
-        _journal.Write($"SCP-603: безошибочный цикл завершён, версия {next.Version} выведена в {path}.");
+        var evt = new VersionEvent(
+            next.Version,
+            path,
+            next.Digest(),
+            next.ParentDigest,
+            mutationSummary,
+            iconPath,
+            rendererPath);
+        _journal.Write($"SCP-603: безошибочный цикл завершён, версия {next.Version} выведена в {path}; " +
+            $"мутация: {mutationSummary}; icon={Path.GetFileName(iconPath)}.");
         VersionEmitted?.Invoke(evt);
         return evt;
     }

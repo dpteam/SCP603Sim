@@ -20,10 +20,9 @@ public partial class MainWindow : Window
 
     private readonly ConcurrentQueue<string> _primeLines = new();
     private readonly DispatcherTimer _primePump;
-    private readonly DispatcherTimer _sceneTimer;
     private Scp603Kernel _kernel;
-    private IScene? _scene;
-    private ulong _sceneSeed;
+    private readonly List<SceneWindow> _sceneWindows = new();
+    private string _selectedSceneId = SceneCatalog.DieId;
     private DateTime _lastTick = DateTime.UtcNow;
     private int _primeCount;
     private int _windowCount;
@@ -43,13 +42,9 @@ public partial class MainWindow : Window
         _primePump.Tick += (_, _) => FlushPrimeLog();
         _primePump.Start();
 
-        _sceneTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _sceneTimer.Tick += (_, _) => TickScene();
-        _sceneTimer.Start();
-
         PopulateSceneMenu();
         UpdateProfileText();
-        ShowScene(SceneCatalog.DieId);
+        SceneTitle.Text = "ОКНА SCP-603 открываются как отдельные окна ОС";
         AppendLog("SCP-603: симулятор готов. «Объект → Запустить», чтобы включить основной поток.");
     }
 
@@ -92,7 +87,7 @@ public partial class MainWindow : Window
                 Header = $"{id} — {SceneCatalog.NameOf(id)}",
                 Tag = id,
             };
-            item.Click += (_, _) => ShowScene((string)item.Tag);
+            item.Click += (_, _) => SelectScene((string)item.Tag);
             ScenesMenu.Items.Add(item);
         }
     }
@@ -203,7 +198,7 @@ public partial class MainWindow : Window
             WindowHint.Text = $"Последнее окно: №{evt.WindowNumber} на числе {evt.Prime} — {evt.SceneName} [{evt.SceneId}]";
             if (AutoWindowCheck.IsChecked == true)
             {
-                ShowScene(evt.SceneId, (ulong)evt.Prime);
+                OpenSceneWindow(evt.SceneId, (ulong)evt.Prime);
             }
         });
     }
@@ -277,23 +272,46 @@ public partial class MainWindow : Window
 
     // ------------------------------------------------------------------ scenes
 
-    private void ShowScene(string id, ulong? seed = null)
+    private void SelectScene(string id)
+    {
+        _selectedSceneId = id;
+        IScene scene = SceneCatalog.Create(id, _kernel.Options.Scenes);
+        SceneTitle.Text = $"Выбрана сцена: {scene.Name} [{scene.Id}]";
+        SceneHint.Text = HintFor(id) + " Она будет открыта отдельным окном.";
+    }
+
+    private void OpenSelectedScene() => OpenSceneWindow(_selectedSceneId, (ulong)DateTime.UtcNow.Ticks);
+
+    private void OpenSceneWindow(string id, ulong seed)
     {
         try
         {
-            _scene = SceneCatalog.Create(id, _kernel.Options.Scenes);
-            _sceneSeed = seed ?? (ulong)DateTime.UtcNow.Ticks;
-            _scene.Start(_kernel.Profile, _sceneSeed);
-            SceneTitle.Text = $"ОКНО SCP-603 — {_scene.Name} [{_scene.Id}]";
-            SceneHint.Text = HintFor(id);
-            InputBox.Clear();
-            RenderScene();
+            var window = new SceneWindow(id, _kernel.Profile, seed, _kernel);
+            window.Closed += (_, _) => _sceneWindows.Remove(window);
+            _sceneWindows.Add(window);
+            window.Show();
+            window.Activate();
+            SceneTitle.Text = $"Открыто отдельное окно: {window.Scene.Name} [{window.Scene.Id}]";
+            SceneHint.Text = HintFor(id) + " Управляется в отдельном окне.";
+            AppendLog($"Открыто отдельное аномальное окно {window.Scene.Id}, seed={seed:x16}.");
         }
         catch (Exception ex)
         {
             AppendLog("Не удалось открыть сцену: " + ex.Message);
         }
     }
+
+    private void CloseLastScene()
+    {
+        if (_sceneWindows.Count > 0)
+        {
+            _sceneWindows[^1].Close();
+        }
+    }
+
+    private void OnOpenSelectedSceneClick(object sender, RoutedEventArgs e) => OpenSelectedScene();
+
+    private void OnCloseLastSceneClick(object sender, RoutedEventArgs e) => CloseLastScene();
 
     private static string HintFor(string id) => id switch
     {
@@ -308,152 +326,13 @@ public partial class MainWindow : Window
         _ => "Наблюдение. Сцена развивается самостоятельно.",
     };
 
-    private void TickScene()
-    {
-        if (_scene is null)
-        {
-            return;
-        }
-
-        DateTime now = DateTime.UtcNow;
-        double delta = (now - _lastTick).TotalSeconds;
-        _lastTick = now;
-        delta = Math.Clamp(delta, 0, 0.2);
-
-        try
-        {
-            _scene.Update(delta);
-
-            if (_scene is ISceneEffects effects)
-            {
-                foreach (SceneEffect effect in effects.DrainEffects())
-                {
-                    _kernel.ApplyEffect(effect);
-                    AppendLog($"[сцена {_scene.Id}] {effect.Kind}: {Truncate(effect.Payload, 120)}");
-                }
-            }
-
-            RenderScene();
-
-            if (_scene.Status is SceneStatus.Finished or SceneStatus.Crashed)
-            {
-                SceneTitle.Text = $"ОКНО SCP-603 — {_scene.Name} [{_scene.Id}] — {(_scene.Status == SceneStatus.Crashed ? "АВАРИЙНОЕ ЗАВЕРШЕНИЕ" : "завершено")}";
-            }
-        }
-        catch (Exception ex)
-        {
-            AppendLog("Ошибка сцены: " + ex.Message);
-        }
-    }
-
-    private void RenderScene()
-    {
-        if (_scene is null)
-        {
-            return;
-        }
-
-        var visual = new DrawingVisual();
-        using (DrawingContext dc = visual.RenderOpen())
-        {
-            var canvas = new WpfCanvas(dc, SceneWidth, SceneHeight);
-            _scene.Draw(canvas);
-        }
-
-        var bitmap = new RenderTargetBitmap(SceneWidth, SceneHeight, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(visual);
-        SceneImage.Source = bitmap;
-    }
-
-    private void SendSceneInput(SceneInput input)
-    {
-        if (_scene is null)
-        {
-            return;
-        }
-
-        try
-        {
-            _scene.OnInput(input);
-            RenderScene();
-        }
-        catch (Exception ex)
-        {
-            AppendLog("Ошибка ввода: " + ex.Message);
-        }
-    }
-
-    private void OnSendClick(object sender, RoutedEventArgs e) => SubmitInput();
-
-    private void OnInputKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            SubmitInput();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Back && InputBox.Text.Length == 0 && _scene is not null)
-        {
-            SendSceneInput(SceneInput.Key_("Backspace"));
-            e.Handled = true;
-        }
-    }
-
-    private void SubmitInput()
-    {
-        string text = InputBox.Text;
-        if (text.Length == 0)
-        {
-            SendSceneInput(SceneInput.Text_("\n"));
-        }
-        else
-        {
-            SendSceneInput(SceneInput.Text_(text));
-        }
-
-        InputBox.Clear();
-    }
-
-    private void OnEnterKeyClick(object sender, RoutedEventArgs e)
-        => SendSceneInput(SceneInput.Key_("Enter"));
-
-    private void OnSceneMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        Point p = e.GetPosition(SceneImage);
-        Point scene = MapToScene(p);
-        SendSceneInput(SceneInput.Click((int)scene.X, (int)scene.Y));
-    }
-
-    private Point MapToScene(Point imagePoint)
-    {
-        double imageW = SceneImage.ActualWidth;
-        double imageH = SceneImage.ActualHeight;
-        if (imageW <= 0 || imageH <= 0)
-        {
-            return new Point(0, 0);
-        }
-
-        // Image uses Stretch=Uniform, so it is letterboxed inside its box.
-        double scale = Math.Min(imageW / SceneWidth, imageH / SceneHeight);
-        double shownW = SceneWidth * scale;
-        double shownH = SceneHeight * scale;
-        double offsetX = (imageW - shownW) / 2;
-        double offsetY = (imageH - shownH) / 2;
-
-        double x = (imagePoint.X - offsetX) / scale;
-        double y = (imagePoint.Y - offsetY) / scale;
-        return new Point(
-            Math.Clamp(x, 0, SceneWidth - 1),
-            Math.Clamp(y, 0, SceneHeight - 1));
-    }
-
-    private static string Truncate(string value, int max)
-        => value.Length <= max ? value : value[..max] + "…";
-
     protected override void OnClosed(EventArgs e)
     {
         _primePump.Stop();
-        _sceneTimer.Stop();
+        foreach (SceneWindow window in _sceneWindows.ToArray())
+        {
+            window.Close();
+        }
         _kernel.Dispose();
         base.OnClosed(e);
     }

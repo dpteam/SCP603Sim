@@ -64,6 +64,14 @@ public static class KernelTests
                     MorphikProfile profile = MorphikProfileFactory.ForVersion(evt.Version);
                     ProgramNode program = Parser.Parse(profile, source); // must not throw
                     True(program.Statements.Length >= 3, $"v{evt.Version}: слишком короткая программа");
+                    True(File.Exists(evt.GeneratedIconPath), $"нет иконки {evt.GeneratedIconPath}");
+                    True(File.Exists(evt.GeneratedRendererPath), $"нет companion C# {evt.GeneratedRendererPath}");
+                    Contains(File.ReadAllText(evt.GeneratedRendererPath), "internal static class SelfCopy");
+                    True(new FileInfo(evt.GeneratedIconPath).Length > 256, "иконка слишком мала");
+                    if (evt.Version > 2)
+                    {
+                        True(evt.ParentDigest != 0, $"v{evt.Version}: отсутствует parent digest");
+                    }
                 }
             }
             finally

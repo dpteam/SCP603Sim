@@ -67,6 +67,8 @@ public static class MorphikProfileFactory
     {
         var p = new MorphikProfile();
         p.Version = 1;
+        p.GenomeSeed = 0x5C603UL;
+        p.MutationSummary = "исходный геном; ANSI/ISO-C-подобная поверхность; базовая сцена SCP-603-44";
         return p;
     }
 
@@ -92,6 +94,8 @@ public static class MorphikProfileFactory
     {
         MorphikProfile p = prev.Clone();
         p.Version = prev.Version + 1;
+        p.ParentDigest = prev.Digest();
+        p.GenomeSeed = rng.State;
 
         if (rng.Chance(0.16)) p.KwLet = PickDistinct(LetPool, p.KwLet, rng);
         if (rng.Chance(0.16)) p.KwSet = PickDistinct(SetPool, p.KwSet, rng);
@@ -145,6 +149,7 @@ public static class MorphikProfileFactory
         });
 
         Reconcile(p, rng);
+        p.MutationSummary = string.Join("; ", MorphikSourceForge.DescribeMutations(prev, p));
         return p;
     }
 

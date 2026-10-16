@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SCP603.Core\SCP603.Core.csproj" />
+    <Resource Include="..\..\assets\scp603.ico" Link="Assets\scp603.ico" />
   </ItemGroup>
 
 </Project>

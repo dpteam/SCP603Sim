@@ -148,7 +148,7 @@ public static class SceneTests
 
         Register("scene 118: поиск принтера и документ", () =>
         {
-            var scene = Start(new PrinterScene(), 2);
+            var scene = Start(new PrinterScene { SearchStepSeconds = 0.01, SearchesBeforePrint = 6 }, 2);
             for (int i = 0; i < 200 && !scene.Printed; i++)
             {
                 scene.Update(0.4);

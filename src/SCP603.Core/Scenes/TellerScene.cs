@@ -48,9 +48,11 @@ public sealed class TellerScene : SceneBase, ISceneEffects
 
     public override SceneKind Kind => SceneKind.Visual;
 
-    public double SearchSeconds { get; set; } = 3.0;
+    /// <summary>Documented cadence: a search notice about every twenty seconds.</summary>
+    public double SearchSeconds { get; set; } = 20.0;
 
-    public double ProcessingSeconds { get; set; } = 2.0;
+    /// <summary>Processing takes no less than thirty seconds in the record.</summary>
+    public double ProcessingSeconds { get; set; } = 30.0;
 
     protected override void OnStart()
     {

@@ -1,10 +1,12 @@
 <Window x:Class="Scp603.Gui.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SCP-603 — симулятор самовозобновляющейся программы"
-        Height="720" Width="1180"
+        Title="SCP-603 — Наблюдательная комната №1 / Лаборатория 12-А"
+        Height="760" Width="1280"
         Background="#FF12161A"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Icon="Assets/scp603.ico"
+        FontFamily="Segoe UI">
     <DockPanel>
         <Menu DockPanel.Dock="Top" Background="#FF1B2127">
             <MenuItem Header="Объект">
@@ -24,13 +26,13 @@
 
         <Border DockPanel.Dock="Top" Background="#FF1B2127" Padding="8,6">
             <StackPanel Orientation="Horizontal">
-                <Button Content="Запустить" Padding="12,4" Margin="0,0,6,0" Click="OnStartClick"/>
-                <Button Content="Остановить" Padding="12,4" Margin="0,0,6,0" Click="OnStopClick"/>
-                <Button Content="+ Версия" Padding="12,4" Margin="0,0,6,0" Click="OnGenerateVersionClick"/>
-                <Button Content="Скомпилировать…" Padding="12,4" Margin="0,0,18,0" Click="OnCompileClick"/>
-                <TextBlock Text="Приближение (мс на число):" Foreground="#FF9AA0A6" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <TextBox x:Name="DelayBox" Width="60" Text="0" VerticalContentAlignment="Center"/>
-                <TextBlock Text="  Автооткрытие окон:" Foreground="#FF9AA0A6" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                <Button Content="Запустить наблюдение" Padding="12,4" Margin="0,0,6,0" Click="OnStartClick"/>
+                <Button Content="Завершить процесс" Padding="12,4" Margin="0,0,6,0" Click="OnStopClick"/>
+                <Button Content="+ Сгенерировать версию" Padding="12,4" Margin="0,0,6,0" Click="OnGenerateVersionClick"/>
+                <Button Content="Компилятор/линковщик…" Padding="12,4" Margin="0,0,18,0" Click="OnCompileClick"/>
+                <TextBlock Text="Пауза простых (мс):" Foreground="#FF9AA0A6" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBox x:Name="DelayBox" Width="60" Text="5" VerticalContentAlignment="Center"/>
+                <TextBlock Text="  Открывать аномальные окна автоматически:" Foreground="#FF9AA0A6" VerticalAlignment="Center" Margin="12,0,6,0"/>
                 <CheckBox x:Name="AutoWindowCheck" VerticalAlignment="Center" IsChecked="False"/>
             </StackPanel>
         </Border>
@@ -60,7 +62,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="ОСНОВНОЙ ПОТОК — генерация простых чисел" Foreground="#FF80CBC4" FontWeight="Bold" Margin="2,0,0,6"/>
+                <TextBlock Grid.Row="0" Text="НАБЛЮДАТЕЛЬНАЯ КОМНАТА №1  /  ОСНОВНОЙ ПОТОК" Foreground="#FF80CBC4" FontWeight="Bold" Margin="2,0,0,6"/>
 
                 <Border Grid.Row="1" Background="Black" BorderBrush="#FF37474F" BorderThickness="1">
                     <TextBox x:Name="PrimeLog"
@@ -90,12 +92,15 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" x:Name="SceneTitle" Text="ОКНО SCP-603 — сцена не выбрана" Foreground="#FF80CBC4" FontWeight="Bold" Margin="2,0,0,6"/>
+                <TextBlock Grid.Row="0" x:Name="SceneTitle" Text="ОКНА SCP-603 открываются отдельно" Foreground="#FF80CBC4" FontWeight="Bold" Margin="2,0,0,6"/>
 
                 <Border Grid.Row="1" Background="Black" BorderBrush="#FF37474F" BorderThickness="1">
-                    <Image x:Name="SceneImage" Stretch="Uniform"
-                           MouseDown="OnSceneMouseDown"
-                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Grid Background="#FF050505">
+                        <TextBlock Text="Аномальные окна открываются как отдельные окна ОС.&#x0a;См. панель задач / список окон."
+                                   Foreground="#FF6B747A" FontFamily="Consolas" FontSize="13"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   TextAlignment="Center"/>
+                    </Grid>
                 </Border>
 
                 <Grid Grid.Row="2" Margin="0,8,0,0">
@@ -105,9 +110,9 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" x:Name="InputBox" FontFamily="Consolas" FontSize="14"
-                             VerticalContentAlignment="Center" KeyDown="OnInputKeyDown"/>
-                    <Button Grid.Column="1" Content="Отправить" Padding="12,4" Margin="6,0,0,0" Click="OnSendClick"/>
-                    <Button Grid.Column="2" Content="Enter" Padding="12,4" Margin="6,0,0,0" Click="OnEnterKeyClick"/>
+                             VerticalContentAlignment="Center" IsEnabled="False"/>
+                    <Button Grid.Column="1" Content="Открыть выбранную сцену" Padding="12,4" Margin="6,0,0,0" Click="OnOpenSelectedSceneClick"/>
+                    <Button Grid.Column="2" Content="Закрыть последнее окно" Padding="12,4" Margin="6,0,0,0" Click="OnCloseLastSceneClick"/>
                 </Grid>
 
                 <TextBlock Grid.Row="3" x:Name="SceneHint" Foreground="#FF9AA0A6" Margin="2,6,0,0" TextWrapping="Wrap" FontSize="11"/>

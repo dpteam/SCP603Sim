@@ -38,9 +38,11 @@ public sealed class PrinterScene : SceneBase, ISceneEffects
 
     public override SceneKind Kind => SceneKind.Notification;
 
-    public double SearchStepSeconds { get; set; } = 0.4;
+    /// <summary>Canonically the program prints "Поиск изображения"/search progress about every 20 s.</summary>
+    public double SearchStepSeconds { get; set; } = 20.0;
 
-    public int SearchesBeforePrint { get; set; } = 12;
+    /// <summary>Initial line plus five repeated searches gives roughly the documented two minutes.</summary>
+    public int SearchesBeforePrint { get; set; } = 6;
 
     protected override void OnStart()
     {

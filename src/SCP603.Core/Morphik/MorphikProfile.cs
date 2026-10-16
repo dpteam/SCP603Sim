@@ -69,6 +69,15 @@ public sealed class MorphikProfile
     public uint PaletteSeed { get; set; } = 0x603;
     public bool Uses3D { get; set; }
 
+    /// <summary>Digest of the previous source genome from which this version was mutated.</summary>
+    public ulong ParentDigest { get; set; }
+
+    /// <summary>Human-readable mutation record embedded in the generated source header.</summary>
+    public string MutationSummary { get; set; } = "initial genome";
+
+    /// <summary>Seed used for deterministic code/icon mutation.</summary>
+    public ulong GenomeSeed { get; set; }
+
     public MorphikProfile Clone() => (MorphikProfile)MemberwiseClone();
 
     /// <summary>Stable 64-bit digest of the profile, used to tag compiled artefacts.</summary>
@@ -107,6 +116,9 @@ public sealed class MorphikProfile
         Feed(StartValue.ToString(CultureInfo.InvariantCulture));
         Feed(Uses3D ? "3d" : "2d");
         Feed(PaletteSeed.ToString(CultureInfo.InvariantCulture));
+        Feed(ParentDigest.ToString(CultureInfo.InvariantCulture));
+        Feed(MutationSummary);
+        Feed(GenomeSeed.ToString(CultureInfo.InvariantCulture));
         return hash;
     }
 
@@ -120,8 +132,9 @@ public sealed class MorphikProfile
           .Append("  if=").Append(KwIf)
           .Append("  while=").Append(KwWhile)
           .Append("  emit=").Append(KwEmit)
-          .Append("  index=").Append(IndexOneBased ? "1-based" : "0-based")
-          .Append("  emitStyle=").Append(Emit);
+           .Append("  index=").Append(IndexOneBased ? "1-based" : "0-based")
+           .Append("  emitStyle=").Append(Emit)
+           .Append("  genome=").Append(Digest().ToString("x16", CultureInfo.InvariantCulture));
         return sb.ToString();
     }
 }
