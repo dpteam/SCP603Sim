@@ -26,9 +26,9 @@ public static class Program
             return args[0].ToLowerInvariant() switch
             {
                 "run" => Run(parsed),
-                "versions" => Versions(parsed.PositionalInt(1, 5), OptionsFrom(parsed)),
+                "versions" => Versions(parsed.PositionalInt(0, 5), OptionsFrom(parsed)),
                 "compile" => Compile(parsed.Positional.ToArray(), OptionsFrom(parsed)),
-                "scene" => Scene(parsed.PositionalString(1, SceneCatalog.DieId), OptionsFrom(parsed)),
+                "scene" => Scene(parsed.PositionalString(0, SceneCatalog.DieId), OptionsFrom(parsed)),
                 "info" => Info(parsed.FlagInt("--version", 1)),
                 "list-scenes" => ListScenes(),
                 "selftest" => SelfTest(),
